@@ -8,7 +8,7 @@
       "name": "ae",
       "source": "./plugins/ae",
       "description": "Git/GitHub ワークフロー & 開発支援スキル集",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "vanilla-bar"
       },

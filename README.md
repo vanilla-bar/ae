@@ -37,7 +37,7 @@ npx skills update
 
 | プラグイン | 説明 |
 |-----------|------|
-| [ae](plugins/ae/) | Git/GitHub ワークフロー & 開発支援スキル集（15スキル） |
+| [ae](plugins/ae/) | Git/GitHub ワークフロー & 開発支援スキル集（15スキル。v0.2.0 で `.claude/ae.config.md` によるプロジェクト設定に対応） |
 
 ## ライセンス
 
