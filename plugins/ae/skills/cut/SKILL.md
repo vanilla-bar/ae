@@ -1,12 +1,12 @@
 ---
 name: cut
 description: featureブランチを作成しドラフトPRまで一気に作成する。ユーザーが「ブランチ切って」「ブランチ作って」「作業始めて」等と言った時にも使用する。
-argument-hint: "[やりたいことの説明 or #issue番号]"
+argument-hint: '[やりたいことの説明 or #issue番号]'
 ---
 
 # /cut - featureブランチ作成 + ドラフトPR作成
 
-GitHubのデフォルトブランチを起点にfeatureブランチを作成し、ドラフトPRまで一気に作成する。
+GitHubのデフォルトブランチを起点にfeatureブランチを作成し、ドラフトPRまで一気に作成する。下記ルールに従えば確認なしで実行する。
 
 **引数:** `/cut <やりたいことの説明>` または `/cut #123`（Issue番号指定）（省略時は対話で聞く）
 
@@ -22,7 +22,7 @@ $ARGUMENTS を確認し、以下のいずれかで処理を分岐する：
 gh issue view {番号} --json title,labels,body
 ```
 
-を実行し、Issueのタイトルをブランチの説明・PRタイトルとして使用する。ラベル情報はプレフィックス判定に活用する（`bug` → `fix/` 等）。
+を実行し、Issueのタイトルをブランチの説明・PRタイトルとして使用する。ラベル情報はプレフィックス判定に活用する。本文（body）の「完了したら誰が何をできる / どうなるか」セクションは、step 4 で PR の `## 完了条件` に転記するため保持しておく。
 
 **B) テキストの場合**: そのままブランチの説明・PRタイトルとして使用する。
 
@@ -37,62 +37,67 @@ gh issue view {番号} --json title,labels,body
 
 ブランチの説明（Issueタイトルまたはユーザー入力）から、以下のルールに従ってブランチ名を生成する：
 
-**プレフィックス判定:**
-- 新機能の追加 → `feature/`（例: 「ユーザー一覧画面の追加」→ `feature/user-list`）
-- バグ修正 → `fix/`（例: 「ログイン画面のバグ修正」→ `fix/login-bug`）
-- リファクタリング → `refactor/`（例: 「認証処理のリファクタリング」→ `refactor/auth`）
-- ドキュメント → `docs/`（例: 「READMEの更新」→ `docs/readme-update`）
-- テスト → `test/`（例: 「ユニットテストの追加」→ `test/unit-tests`）
-- その他（設定変更、CI等） → `chore/`
+**ラベル → プレフィックス対応表:**
+
+| ラベル     | プレフィックス | 備考                                     |
+| ---------- | -------------- | ---------------------------------------- |
+| `feature`  | `feature/`     | 新規機能 / 機能拡張                      |
+| `bug`      | `fix/`         | 不具合の調査〜修正                       |
+| `refactor` | `refactor/`    | 振る舞いを変えずコード改善               |
+| `docs`     | `docs/`        | リポジトリ内ドキュメントの場合のみ       |
+| `chore`    | `chore/`       | 依存更新・CI・スクリプトなど雑務         |
+| `research` | `chore/`       | コード変更を伴う技術検証の場合のみ       |
+| `support`  | —              | cut 対象外（ブランチ不要なケースが多い） |
+
+**テキスト入力時の判定:**
+
+- 「○○の追加」「新機能」→ `feature/`
+- 「バグ修正」「fix」→ `fix/`
+- 「リファクタ」「整理」→ `refactor/`
+- 「READMEの更新」「ドキュメント」→ `docs/`
+- それ以外 → `chore/`
 
 **Issue番号指定時の命名規則:**
+
 - ブランチ名にIssue番号を含める（例: `feature/123-user-list`）
-- ラベルからプレフィックスを判定する（`bug` → `fix/`、`enhancement` → `feature/` 等）
+- ラベルから上の対応表でプレフィックスを判定する
 
 **命名規則:**
+
 - 小文字のみ使用
 - 単語はハイフン（`-`）で区切る
 - 簡潔で分かりやすい英語名
 - 日本語は英語に変換
 
-### 3. ブランチ名・PR先の確認
-
-デフォルトブランチを取得し、AskUserQuestionツールでブランチ名とPRのbase先をまとめてユーザーに提示する：
+### 3. ブランチ作成 + 空コミット + push
 
 ```bash
 DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
-```
 
-```
-以下の内容で作成します：
-
-  ブランチ名: {BRANCH_NAME}
-  起点/PR先:  {DEFAULT_BRANCH}
-
-（問題なければそのまま進めます。変更したい場合は指示してください）
-```
-
-### 4. ブランチ作成 + 空コミット + push
-
-ユーザーの承認後、以下を実行する：
-
-```bash
 git fetch origin
 git checkout -b {BRANCH_NAME} origin/${DEFAULT_BRANCH}
 git commit --allow-empty --no-verify -m "chore: start work on {説明}"
-git push -u origin {BRANCH_NAME}
+git push --no-verify -u origin {BRANCH_NAME}
 ```
 
-### 5. ドラフトPR作成
+### 4. ドラフトPR作成
 
 **Issue番号指定時:**
+
+step 1A で取得した Issue 本文から「完了したら誰が何をできる / どうなるか」セクションの内容を抽出し、PR 本文の `## 完了条件` に**チェックボックス形式で**転記する。完了条件は以後**不変の受け入れ基準**として扱い、`/pr-ready` はレビュー時にこのチェックボックスを確認（チェック）するだけで、項目の生成・追加はしない。
 
 ```bash
 gh pr create --draft --base ${DEFAULT_BRANCH} --title "{Issueタイトル}" --body "$(cat <<'EOF'
 Closes #{番号}
+
+## 完了条件
+
+- [ ] {Issue「完了したら誰が何をできる / どうなるか」の内容}
 EOF
 )"
 ```
+
+Issue にこのセクションが無い（`task.md` テンプレ以前の Issue 等）場合は `## 完了条件` を省略し、`Closes #{番号}` のみとする。
 
 **テキスト指定時:**
 
@@ -103,7 +108,7 @@ EOF
 )"
 ```
 
-### 6. 完了メッセージ
+### 5. 完了メッセージ
 
 ```
 ✅ ブランチ `{BRANCH_NAME}` を作成し、ドラフトPRを作成しました（origin/${DEFAULT_BRANCH}起点）

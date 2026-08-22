@@ -2,7 +2,7 @@
 name: pr-list
 description: /pr-list - PR一覧表示
 disable-model-invocation: true
-argument-hint: "[open|closed|all]"
+argument-hint: '[open|closed|all]'
 ---
 
 # /pr-list - PR一覧表示
@@ -16,6 +16,7 @@ Pull Requestの一覧を表示する。
 ### 1. 引数の確認
 
 $ARGUMENTS でstateフィルタを指定できる：
+
 - `open`（デフォルト）: オープン中のPR
 - `closed`: クローズ済みのPR
 - `all`: すべてのPR
